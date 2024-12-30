@@ -15,7 +15,7 @@ export default config({
          * Define your room handlers:
          */
         gameServer.define('my_room', MyRoom);
-        gameServer.define('lobby', LobbyRoom).enableRealtimeListing();
+        gameServer.define('lobby', LobbyRoom)
 
     },
 
