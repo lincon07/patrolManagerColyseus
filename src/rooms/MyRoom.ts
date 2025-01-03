@@ -52,18 +52,21 @@ export class MyRoom extends Room<MyRoomState> {
 
     this.onMessage("update_status", (client, message) => {
       const clientState = this.state.clients.find((c) => c.sessionId === client.sessionId);
-
+    
       if (clientState) {
-        if (message.selectedDepartment) {
-          clientState.status.selectedDepartment = message.selectedDepartment;
-        }
-        if (message.selectedServer) {
-          clientState.status.selectedServer = message.selectedServer;
-        }
-
+        // Update the client's status
+        clientState.status.selectedDepartment = message.selectedDepartment || null;
+        clientState.status.selectedServer = message.selectedServer || null;
+    
+        console.log(`Updated status for client ${client.sessionId}:`, clientState.status);
+    
+        // Broadcast the updated client list
         this.broadcastUpdatedClients();
+      } else {
+        console.warn(`Client ${client.sessionId} not found for status update.`);
       }
     });
+    
   }
 
   onJoin(client: Client, options: any) {
@@ -117,4 +120,5 @@ export class MyRoom extends Room<MyRoomState> {
       })),
     });
   }
+  
 }
