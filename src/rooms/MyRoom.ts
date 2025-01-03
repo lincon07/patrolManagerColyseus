@@ -94,7 +94,22 @@ export class MyRoom extends Room<MyRoomState> {
 
   onLeave(client: Client, consented: boolean) {
     console.log(`Client ${client.sessionId} left.`);
+  
+    // Find the index of the client in the state
+    const index = this.state.clients.findIndex((c) => c.sessionId === client.sessionId);
+  
+    if (index !== -1) {
+      // Remove the client from the state
+      console.log(`Removing client ${client.sessionId} from the client list.`);
+      this.state.clients.splice(index, 1);
+  
+      // Broadcast the updated clients list
+      this.broadcastUpdatedClients();
+    } else {
+      console.warn(`Client ${client.sessionId} not found in the client list.`);
+    }
   }
+  
 
   onDispose() {
     console.log(`Room ${this.roomId} disposing...`);
