@@ -111,8 +111,8 @@ export class MyRoom extends Room<MyRoomState> {
           Duration: log.Duration,
         })),
         status: {
-          selectedDepartment: client.status.selectedDepartment,
-          selectedServer: client.status.selectedServer,
+          selectedDepartment: client.status.selectedDepartment || null,
+          selectedServer: client.status.selectedServer || null,
         },
       })),
     });
