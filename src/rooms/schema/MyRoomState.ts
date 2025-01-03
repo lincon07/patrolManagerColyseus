@@ -1,5 +1,10 @@
 import { Schema, type, ArraySchema, MapSchema } from "@colyseus/schema";
 
+// client status class 
+export class ClientStatus extends Schema {
+  @type("string") selectedDepartment: string = "";
+  @type("string") selectedServer: string = "";
+}
 // Subdivision class
 export class Subdivision extends Schema {
   @type("string") Alias: string = "";
@@ -67,6 +72,7 @@ export class ClientSchema extends Schema {
   @type("string") avatar: string = "";
   @type("string") sessionId: string = ""; // Store the sessionId for tracking
   @type([PatrolLogs]) patrolLog: ArraySchema<PatrolLogs> = new ArraySchema<PatrolLogs>(); // Array of logs
+  @type(ClientStatus) status: ClientStatus = new ClientStatus();
 }
 
 // MyRoomState class

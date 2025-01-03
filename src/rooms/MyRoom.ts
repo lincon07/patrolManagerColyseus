@@ -5,6 +5,7 @@ import {
   PatrolLogs,
   SubdivisionUsage,
   Subdivision,
+  ClientStatus,
 } from "./schema/MyRoomState";
 import { ArraySchema } from "@colyseus/schema";
 
@@ -23,9 +24,7 @@ export class MyRoom extends Room<MyRoomState> {
       console.log(`Updating logs for client ${client.sessionId}:`, message);
 
       // Find the client in the state
-      const clientState = this.state.clients.find(
-        (c) => c.sessionId === client.sessionId
-      );
+      const clientState = this.state.clients.find((c) => c.sessionId === client.sessionId);
 
       if (clientState && Array.isArray(message.patrolLogs)) {
         // Update patrol logs
@@ -87,6 +86,51 @@ export class MyRoom extends Room<MyRoomState> {
         console.log(`Client ${client.sessionId} not found or invalid logs.`);
       }
     });
+
+    // listen for "update_status" message
+    this.onMessage("update_status", (client, message) => {
+      const clientState = this.state.clients.find(
+        (c) => c.sessionId === client.sessionId
+      );
+
+      if (clientState) {
+        // Update status with proper type
+        if (message.selectedDepartment) {
+          clientState.status.selectedDepartment = message.selectedDepartment;
+        }
+
+        if (message.selectedServer) {
+          clientState.status.selectedServer = message.selectedServer;
+        }
+
+        console.log(`Status updated for client ${client.sessionId}:`, clientState.status);
+
+        // Broadcast updated client list
+        this.broadcast("update_clients", {
+          clients: this.state.clients.map((client) => ({
+            name: client.name,
+            avatar: client.avatar,
+            websiteID: client.websiteID,
+            patrolLogs: client.patrolLog.map((log) => ({
+              Department: log.Department,
+              Server: log.Server,
+              startDate: log.startDate,
+              endDate: log.endDate,
+              Duration: log.Duration,
+            })),
+            status: {
+              selectedDepartment: client.status.selectedDepartment,
+              selectedServer: client.status.selectedServer,
+            },
+          })),
+        });
+      } else {
+        console.log(`Client ${client.sessionId} not found.`);
+      }
+    });
+
+
+
   }
 
   onJoin(client: Client, options: any) {
@@ -95,6 +139,12 @@ export class MyRoom extends Room<MyRoomState> {
     newClient.websiteID = options.websiteID || "0";
     newClient.avatar = options.avatar || "";
     newClient.sessionId = client.sessionId;
+
+    // Ensure `status` is an instance of `ClientStatus`
+    const status = new ClientStatus();
+    status.selectedDepartment = options.status?.selectedDepartment || "";
+    status.selectedServer = options.status?.selectedServer || "";
+    newClient.status = status;
 
     // Map all patrol logs
     if (Array.isArray(options.patrolLogs)) {
@@ -117,8 +167,7 @@ export class MyRoom extends Room<MyRoomState> {
             subdivisionUsage.id = sub.id || 0;
             subdivisionUsage.Subdivision = new Subdivision();
             subdivisionUsage.Subdivision.Alias = sub.Subdivision?.Alias || "";
-            subdivisionUsage.Subdivision.FullName =
-              sub.Subdivision?.FullName || "";
+            subdivisionUsage.Subdivision.FullName = sub.Subdivision?.FullName || "";
             subdivisionUsage.Subdivision.Ranks = new ArraySchema<string>(
               ...(sub.Subdivision?.Ranks || [])
             );
@@ -150,11 +199,16 @@ export class MyRoom extends Room<MyRoomState> {
           endDate: log.endDate,
           Duration: log.Duration,
         })),
+        status: {
+          selectedDepartment: client.status.selectedDepartment,
+          selectedServer: client.status.selectedServer,
+        },
       })),
     });
 
     console.log(`Client ${client.sessionId} joined.`);
   }
+
 
   onLeave(client: Client, consented: boolean) {
     console.log(`Client ${client.sessionId} left.`);
