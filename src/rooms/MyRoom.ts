@@ -81,8 +81,8 @@ export class MyRoom extends Room<MyRoomState> {
     newClient.sessionId = client.sessionId;
 
     const status = new ClientStatus();
-    status.selectedDepartment = options.status?.selectedDepartment || "";
-    status.selectedServer = options.status?.selectedServer || "";
+    status.selectedDepartment = options.status?.selectedDepartment || null;
+    status.selectedServer = options.status?.selectedServer || null;
     newClient.status = status;
 
     this.state.clients.push(newClient);
