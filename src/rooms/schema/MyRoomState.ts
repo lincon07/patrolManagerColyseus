@@ -38,7 +38,7 @@ export class ClientSchema extends Schema {
   @type("string") websiteID: string = "";
   @type("string") avatar: string = "";
   @type("string") sessionId: string = "";
-  @type([PatrolLogs]) patrolLog: ArraySchema<PatrolLogs> = new ArraySchema<PatrolLogs>();
+  @type([PatrolLogs]) patrolLogs: ArraySchema<PatrolLogs> = new ArraySchema<PatrolLogs>();
   @type(ClientStatus) status: ClientStatus = new ClientStatus();
 }
 

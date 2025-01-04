@@ -6,6 +6,8 @@ export class MyRoom extends Room<MyRoomState> {
   onCreate(options: any) {
     this.setState(new MyRoomState());
 
+    this.setPatchRate(1000); // Update clients every second for better sync
+
     this.onMessage("type", (client, message) => {
       console.log(`Message received from ${client.sessionId}:`, message);
     });
@@ -14,7 +16,9 @@ export class MyRoom extends Room<MyRoomState> {
       const clientState = this.state.clients.find((c) => c.sessionId === client.sessionId);
 
       if (clientState && Array.isArray(message.patrolLogs)) {
-        clientState.patrolLog = new ArraySchema<PatrolLogs>();
+        // Clear existing patrol logs
+        clientState.patrolLogs = new ArraySchema<PatrolLogs>();
+
         message.patrolLogs.forEach((log: any) => {
           const patrolLog = new PatrolLogs();
           patrolLog.Department = log.Department || "";
@@ -25,6 +29,7 @@ export class MyRoom extends Room<MyRoomState> {
           patrolLog.Active = log.Active || false;
           patrolLog.Paused = log.Paused || false;
 
+          // Handle Subdivision Usage
           if (Array.isArray(log.SubdivisionUsage)) {
             patrolLog.SubdivisionUsage = new ArraySchema<SubdivisionUsage>();
             log.SubdivisionUsage.forEach((sub: any) => {
@@ -43,33 +48,44 @@ export class MyRoom extends Room<MyRoomState> {
             });
           }
 
-          clientState.patrolLog.push(patrolLog);
+          // Add the log to the client's patrol logs
+          clientState.patrolLogs.push(patrolLog);
         });
 
+        // Log the updated patrol logs for debugging
+        console.log(`Updated patrol logs for client ${client.sessionId}:`, clientState.patrolLogs);
+
+        // Broadcast updated clients to all
         this.broadcastUpdatedClients();
+      } else {
+        console.warn(`Invalid patrol logs received from client ${client.sessionId}`);
       }
     });
 
     this.onMessage("update_status", (client, message) => {
       const clientState = this.state.clients.find((c) => c.sessionId === client.sessionId);
-    
+
       if (clientState) {
-        // Update the client's status
         clientState.status.selectedDepartment = message.selectedDepartment || null;
         clientState.status.selectedServer = message.selectedServer || null;
-    
+
         console.log(`Updated status for client ${client.sessionId}:`, clientState.status);
-    
-        // Broadcast the updated client list
+
         this.broadcastUpdatedClients();
       } else {
         console.warn(`Client ${client.sessionId} not found for status update.`);
       }
     });
-    
+
+    this.onMessage("dev_announcement", (client, message) => {
+      this.broadcastDevAnnouncement(message.to, message.message);
+      console.log(`Dev announcement sent to ${message.to}:`, message.message);
+    })
   }
 
   onJoin(client: Client, options: any) {
+    console.log(`Client ${client.sessionId} joined with options:`, options);
+
     const existingClient = this.state.clients.find((c) => c.websiteID === options.websiteID);
 
     if (existingClient) {
@@ -83,6 +99,42 @@ export class MyRoom extends Room<MyRoomState> {
     newClient.avatar = options.avatar || "";
     newClient.sessionId = client.sessionId;
 
+    // Add patrolLogs
+    if (Array.isArray(options.patrolLogs)) {
+      newClient.patrolLogs = new ArraySchema<PatrolLogs>();
+      options.patrolLogs.forEach((log: any) => {
+        const patrolLog = new PatrolLogs();
+        patrolLog.Department = log.Department || "";
+        patrolLog.Server = log.Server || "";
+        patrolLog.startDate = log.startDate || "";
+        patrolLog.endDate = log.endDate || "";
+        patrolLog.Duration = log.Duration || 0;
+        patrolLog.Active = log.Active || false;
+        patrolLog.Paused = log.Paused || false;
+
+        // Add SubdivisionUsage if applicable
+        if (Array.isArray(log.SubdivisionUsage)) {
+          patrolLog.SubdivisionUsage = new ArraySchema<SubdivisionUsage>();
+          log.SubdivisionUsage.forEach((sub: any) => {
+            const subdivisionUsage = new SubdivisionUsage();
+            subdivisionUsage.id = sub.id || 0;
+            subdivisionUsage.Subdivision = new Subdivision();
+            subdivisionUsage.Subdivision.Alias = sub.Subdivision?.Alias || "";
+            subdivisionUsage.Subdivision.FullName = sub.Subdivision?.FullName || "";
+            subdivisionUsage.Subdivision.Ranks = new ArraySchema<string>(...(sub.Subdivision?.Ranks || []));
+            subdivisionUsage.StartTime = sub.StartTime || "";
+            subdivisionUsage.EndTime = sub.EndTime || "";
+            subdivisionUsage.Duration = sub.Duration || 0;
+            subdivisionUsage.Active = sub.Active || false;
+            subdivisionUsage.Paused = sub.Paused || false;
+            patrolLog.SubdivisionUsage.push(subdivisionUsage);
+          });
+        }
+
+        newClient.patrolLogs.push(patrolLog);
+      });
+    }
+
     const status = new ClientStatus();
     status.selectedDepartment = options.status?.selectedDepartment || null;
     status.selectedServer = options.status?.selectedServer || null;
@@ -92,24 +144,20 @@ export class MyRoom extends Room<MyRoomState> {
     this.broadcastUpdatedClients();
   }
 
+
   onLeave(client: Client, consented: boolean) {
     console.log(`Client ${client.sessionId} left.`);
-  
-    // Find the index of the client in the state
+
     const index = this.state.clients.findIndex((c) => c.sessionId === client.sessionId);
-  
+
     if (index !== -1) {
-      // Remove the client from the state
       console.log(`Removing client ${client.sessionId} from the client list.`);
       this.state.clients.splice(index, 1);
-  
-      // Broadcast the updated clients list
       this.broadcastUpdatedClients();
     } else {
       console.warn(`Client ${client.sessionId} not found in the client list.`);
     }
   }
-  
 
   onDispose() {
     console.log(`Room ${this.roomId} disposing...`);
@@ -121,7 +169,7 @@ export class MyRoom extends Room<MyRoomState> {
         name: client.name,
         avatar: client.avatar,
         websiteID: client.websiteID,
-        patrolLogs: client.patrolLog.map((log) => ({
+        patrolLogs: client.patrolLogs.map((log) => ({
           Department: log.Department,
           Server: log.Server,
           startDate: log.startDate,
@@ -135,5 +183,12 @@ export class MyRoom extends Room<MyRoomState> {
       })),
     });
   }
-  
+
+  private broadcastDevAnnouncement(to: string, message: string) {
+    this.broadcast("dev_announcment", {
+      to,
+      message
+    })
+  }
+
 }
