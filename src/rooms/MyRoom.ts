@@ -81,6 +81,23 @@ export class MyRoom extends Room<MyRoomState> {
       this.broadcastDevAnnouncement(message.to, message.message);
       console.log(`Dev announcement sent to ${message.to}:`, message.message);
     })
+
+    this.onMessage("friend_request", (client, message) => {
+      console.log(`Friend request received from ${client.sessionId}:`, message);
+    
+      const targetClient = this.state.clients.find((c) => c.websiteID === message.targetWebsiteID);
+    
+      if (targetClient) {
+        client.send("friend_request", {
+          from: client.userData.websiteID, // Access websiteID from client.userData
+          to: targetClient.websiteID,
+        });
+        console.log(`Friend request sent to ${targetClient.sessionId}`);
+      } else {
+        console.warn(`Target client ${message.targetWebsiteID} not found.`);
+      }
+    });
+    
   }
 
   onJoin(client: Client, options: any) {
@@ -97,6 +114,7 @@ export class MyRoom extends Room<MyRoomState> {
     newClient.name = options.name || "Guest";
     newClient.websiteID = options.websiteID || "0";
     newClient.avatar = options.avatar || "";
+    newClient.version = options.version || "";
     newClient.sessionId = client.sessionId;
 
     // Add patrolLogs
@@ -169,6 +187,7 @@ export class MyRoom extends Room<MyRoomState> {
         name: client.name,
         avatar: client.avatar,
         websiteID: client.websiteID,
+        version: client.version,
         patrolLogs: client.patrolLogs.map((log) => ({
           Department: log.Department,
           Server: log.Server,
