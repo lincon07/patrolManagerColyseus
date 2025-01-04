@@ -88,10 +88,7 @@ export class MyRoom extends Room<MyRoomState> {
       const targetClient = this.state.clients.find((c) => c.websiteID === message.targetWebsiteID);
     
       if (targetClient) {
-        targetClient.sessionId && this.clients[targetClient.sessionId as any]?.send("friend_request", {
-          from: client.userData.websiteID,
-          to: targetClient.websiteID,
-        });
+        this.broadcastFriendRequest(client?.userData?.websiteID, targetClient.sessionId);
         console.log(`Friend request sent to ${targetClient.sessionId}`);
       } else {
         console.warn(`Target client ${message.targetWebsiteID} not found.`);
@@ -198,4 +195,10 @@ export class MyRoom extends Room<MyRoomState> {
     })
   }
 
+  private broadcastFriendRequest(from: string, to: string) {
+    this.broadcast("friend_request", {
+      from,
+      to,
+    });
+  }
 }
