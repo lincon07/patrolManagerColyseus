@@ -88,8 +88,8 @@ export class MyRoom extends Room<MyRoomState> {
       const targetClient = this.state.clients.find((c) => c.websiteID === message.targetWebsiteID);
     
       if (targetClient) {
-        client.send("friend_request", {
-          from: client.userData.websiteID, // Access websiteID from client.userData
+        targetClient.sessionId && this.clients[targetClient.sessionId as any]?.send("friend_request", {
+          from: client.userData.websiteID,
           to: targetClient.websiteID,
         });
         console.log(`Friend request sent to ${targetClient.sessionId}`);
@@ -98,25 +98,31 @@ export class MyRoom extends Room<MyRoomState> {
       }
     });
     
+    
   }
 
   onJoin(client: Client, options: any) {
     console.log(`Client ${client.sessionId} joined with options:`, options);
-
+  
+    // Attach websiteID to client.userData
+    client.userData = {
+      websiteID: options.websiteID || "0",
+    };
+  
     const existingClient = this.state.clients.find((c) => c.websiteID === options.websiteID);
-
+  
     if (existingClient) {
       existingClient.sessionId = client.sessionId;
       return;
     }
-
+  
     const newClient = new ClientSchema();
     newClient.name = options.name || "Guest";
     newClient.websiteID = options.websiteID || "0";
     newClient.avatar = options.avatar || "";
     newClient.version = options.version || "";
     newClient.sessionId = client.sessionId;
-
+  
     // Add patrolLogs
     if (Array.isArray(options.patrolLogs)) {
       newClient.patrolLogs = new ArraySchema<PatrolLogs>();
@@ -129,38 +135,20 @@ export class MyRoom extends Room<MyRoomState> {
         patrolLog.Duration = log.Duration || 0;
         patrolLog.Active = log.Active || false;
         patrolLog.Paused = log.Paused || false;
-
-        // Add SubdivisionUsage if applicable
-        if (Array.isArray(log.SubdivisionUsage)) {
-          patrolLog.SubdivisionUsage = new ArraySchema<SubdivisionUsage>();
-          log.SubdivisionUsage.forEach((sub: any) => {
-            const subdivisionUsage = new SubdivisionUsage();
-            subdivisionUsage.id = sub.id || 0;
-            subdivisionUsage.Subdivision = new Subdivision();
-            subdivisionUsage.Subdivision.Alias = sub.Subdivision?.Alias || "";
-            subdivisionUsage.Subdivision.FullName = sub.Subdivision?.FullName || "";
-            subdivisionUsage.Subdivision.Ranks = new ArraySchema<string>(...(sub.Subdivision?.Ranks || []));
-            subdivisionUsage.StartTime = sub.StartTime || "";
-            subdivisionUsage.EndTime = sub.EndTime || "";
-            subdivisionUsage.Duration = sub.Duration || 0;
-            subdivisionUsage.Active = sub.Active || false;
-            subdivisionUsage.Paused = sub.Paused || false;
-            patrolLog.SubdivisionUsage.push(subdivisionUsage);
-          });
-        }
-
+  
         newClient.patrolLogs.push(patrolLog);
       });
     }
-
+  
     const status = new ClientStatus();
     status.selectedDepartment = options.status?.selectedDepartment || null;
     status.selectedServer = options.status?.selectedServer || null;
     newClient.status = status;
-
+  
     this.state.clients.push(newClient);
     this.broadcastUpdatedClients();
   }
+  
 
 
   onLeave(client: Client, consented: boolean) {
