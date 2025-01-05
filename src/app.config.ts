@@ -1,11 +1,11 @@
 import config from "@colyseus/tools";
 import { monitor } from "@colyseus/monitor";
 import { playground } from "@colyseus/playground";
+import { lobbyRoom } from "./rooms/lobbyRoom";
 
 /**
  * Import your Room files
  */
-import { lobbyRoom } from "./rooms/LobbyRoom";
 
 export default config({
 
