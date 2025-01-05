@@ -95,22 +95,46 @@ export class MyRoom extends Room<MyRoomState> {
       }
     });
 
-    this.onMessage("friend_request_response", (client, message) => {
-      console.log(`Friend request response received from ${client.sessionId}:`, message);
+    this.onMessage("friend_request", (client, message) => {
+      console.log(`Friend request received from ${client.sessionId}:`, message);
     
-      const targetClient = this.clients.find((c) => c.userData?.websiteID === message.to);
-    
-      if (targetClient) {
-        targetClient.send("friend_request_response", {
-          from: client.userData?.websiteID,
-          to: message.to,
-          response: message.response,
-        });
-        console.log(`Friend request response sent to ${targetClient.sessionId}`);
-      } else {
-        console.warn(`Target client ${message.to} not found.`);
+      // Validate message data
+      if (!message.targetWebsiteID || !client.userData.websiteID) {
+        console.warn(`Invalid friend request data:`, message);
+        return client.send("error", { message: "Invalid friend request data" });
       }
+    
+      const targetClient = this.state.clients.find((c) => c.websiteID === message.targetWebsiteID);
+    
+      if (!targetClient) {
+        console.warn(`Target client ${message.targetWebsiteID} not found.`);
+        return client.send("error", { message: "Target client not found" });
+      }
+    
+      if (targetClient.websiteID === client.userData.websiteID) {
+        console.warn("Cannot send a friend request to oneself.");
+        return client.send("error", { message: "Cannot send a friend request to yourself" });
+      }
+    
+      if (!targetClient.allowFriendRequests) {
+        console.warn(`${targetClient.name} does not allow friend requests.`);
+        return client.send("error", { message: `${targetClient.name} does not allow friend requests` });
+      }
+    
+      // Ensure the friend request hasn't already been sent
+      const existingRequest = this.state.clients.some(
+        (c) => c.websiteID === targetClient.websiteID && c.sessionId === client.sessionId
+      );
+    
+      if (existingRequest) {
+        console.warn("Friend request already sent.");
+        return client.send("error", { message: "Friend request already sent" });
+      }
+    
+      this.broadcastFriendRequest(client.userData.websiteID, message.targetWebsiteID);
+      console.log(`Friend request sent to ${targetClient.sessionId}`);
     });
+    
     
     
     
