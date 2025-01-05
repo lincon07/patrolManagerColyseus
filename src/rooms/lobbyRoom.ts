@@ -2,7 +2,7 @@ import { Room, Client } from "@colyseus/core";
 import { LobbyRoomState, ClientSchema, PatrolLogs, SubdivisionUsage, Subdivision, ClientStatus } from "./schema/lobbyRoomState";
 import { ArraySchema } from "@colyseus/schema";
 
-export class LobbyRoom extends Room<LobbyRoomState> {
+export class lobbyRoom extends Room<LobbyRoomState> {
   onCreate(options: any) {
     this.setState(new LobbyRoomState());
 
