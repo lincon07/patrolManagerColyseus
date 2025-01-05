@@ -94,6 +94,24 @@ export class MyRoom extends Room<MyRoomState> {
         console.warn(`Target client ${message.targetWebsiteID} not found.`);
       }
     });
+
+    this.onMessage("friend_request_response", (client, message) => {
+      console.log(`Friend request response received from ${client.sessionId}:`, message);
+    
+      const targetClient = this.clients.find((c) => c.userData?.websiteID === message.to);
+    
+      if (targetClient) {
+        targetClient.send("friend_request_response", {
+          from: client.userData?.websiteID,
+          to: message.to,
+          response: message.response,
+        });
+        console.log(`Friend request response sent to ${targetClient.sessionId}`);
+      } else {
+        console.warn(`Target client ${message.to} not found.`);
+      }
+    });
+    
     
     
   }
@@ -196,9 +214,27 @@ export class MyRoom extends Room<MyRoomState> {
   }
 
   private broadcastFriendRequest(from: string, to: string) {
+    const sender = this.state.clients.find((client) => client.websiteID === from);
+    if (!sender) {
+      console.warn(`Sender with websiteID ${from} not found`);
+      return;
+    }
+  
     this.broadcast("friend_request", {
+      from: sender.websiteID,
+      to,
+      name: sender.name || "Unknown",
+      avatar: sender.avatar || "",
+    });
+  }
+  
+
+  private broadcastFriendRequestResponse(from: string, to: string, response: boolean) {
+    console.log(`Broadcasting friend request response from ${from} to ${to}:`, response);
+    this.broadcast("friend_request_response", {
       from,
       to,
+      response,
     });
   }
 }
