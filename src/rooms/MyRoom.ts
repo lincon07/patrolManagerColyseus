@@ -136,7 +136,7 @@ export class MyRoom extends Room<MyRoomState> {
     newClient.websiteID = options.websiteID || "0";
     newClient.avatar = options.avatar || "";
     newClient.version = options.version || "";
-    newClient.allowFriendRequests = options.allowFriendRequests || true;
+    newClient.allowFriendRequests = options.allowFriendRequests
     newClient.sessionId = client.sessionId;
   
     // Add patrolLogs
