@@ -136,6 +136,7 @@ export class MyRoom extends Room<MyRoomState> {
     newClient.websiteID = options.websiteID || "0";
     newClient.avatar = options.avatar || "";
     newClient.version = options.version || "";
+    newClient.allowFriendRequests = options.allowFriendRequests || true;
     newClient.sessionId = client.sessionId;
   
     // Add patrolLogs
@@ -191,6 +192,7 @@ export class MyRoom extends Room<MyRoomState> {
         avatar: client.avatar,
         websiteID: client.websiteID,
         version: client.version,
+        allowFriendRequests: client.allowFriendRequests,
         patrolLogs: client.patrolLogs.map((log) => ({
           Department: log.Department,
           Server: log.Server,
@@ -227,14 +229,5 @@ export class MyRoom extends Room<MyRoomState> {
       avatar: sender.avatar || "",
     });
   }
-  
 
-  private broadcastFriendRequestResponse(from: string, to: string, response: boolean) {
-    console.log(`Broadcasting friend request response from ${from} to ${to}:`, response);
-    this.broadcast("friend_request_response", {
-      from,
-      to,
-      response,
-    });
-  }
 }

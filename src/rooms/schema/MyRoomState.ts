@@ -37,6 +37,7 @@ export class ClientSchema extends Schema {
   @type("string") name: string = "";
   @type("string") websiteID: string = "";
   @type("string") version: string = "";
+  @type('boolean') allowFriendRequests: boolean = true;
   @type("string") avatar: string = "";
   @type("string") sessionId: string = "";
   @type([PatrolLogs]) patrolLogs: ArraySchema<PatrolLogs> = new ArraySchema<PatrolLogs>();
