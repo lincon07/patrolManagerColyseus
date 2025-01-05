@@ -1,5 +1,5 @@
 import { Room, Client } from "@colyseus/core";
-import { LobbyRoomState, ClientSchema, PatrolLogs, SubdivisionUsage, Subdivision, ClientStatus } from "./schema/lobbyRoomState";
+import { LobbyRoomState, ClientSchema, PatrolLogs, SubdivisionUsage, Subdivision, ClientStatus, developemtAnnouncement } from "./schema/lobbyRoomState";
 import { ArraySchema } from "@colyseus/schema";
 
 export class lobbyRoom extends Room<LobbyRoomState> {
@@ -78,9 +78,14 @@ export class lobbyRoom extends Room<LobbyRoomState> {
     });
 
     this.onMessage("dev_announcement", (client, message) => {
+      console.log(`Dev announcement received:`, message);
+      const announcement = new developemtAnnouncement();
+      announcement.to = message.to;
+      announcement.message = message.message;
+      this.state.announcements.push(announcement);
       this.broadcastDevAnnouncement(message.to, message.message);
-      console.log(`Dev announcement sent to ${message.to}:`, message.message);
-    })
+  });
+  
 
     this.onMessage("friend_request", (client, message) => {
       console.log(`Friend request received from ${client.sessionId}:`, message);
@@ -148,7 +153,6 @@ export class lobbyRoom extends Room<LobbyRoomState> {
   }
 
   onJoin(client: Client, options: any) {
-    console.log(`Client ${client.sessionId} joined with options:`, options);
 
     // Attach websiteID to client.userData
     client.userData = {
@@ -238,10 +242,12 @@ export class lobbyRoom extends Room<LobbyRoomState> {
   }
 
   private broadcastDevAnnouncement(to: string, message: string) {
+    console.log(`Broadcasting dev announcement: to=${to}, message=${message}`);
     this.broadcast("dev_announcment", {
-      to,
-      message
-    })
-  }
+        to,
+        message,
+    });
+}
+
 
 }

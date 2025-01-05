@@ -1,5 +1,11 @@
 import { Schema, type, ArraySchema } from "@colyseus/schema";
 
+export class developemtAnnouncement extends Schema {
+  @type("string") to: string = "";
+  @type("string") message: string = "";
+  @type(["string"]) viewedClients: ArraySchema<string> = new ArraySchema<string>();
+  
+}
 export class ClientStatus extends Schema {
   @type("string") selectedDepartment: string = "";
   @type("string") selectedServer: string = "";
@@ -46,4 +52,6 @@ export class ClientSchema extends Schema {
 
 export class LobbyRoomState extends Schema {
   @type([ClientSchema]) clients: ArraySchema<ClientSchema> = new ArraySchema<ClientSchema>();
+  // array of announcements
+  @type([developemtAnnouncement]) announcements: ArraySchema<developemtAnnouncement> = new ArraySchema<developemtAnnouncement>();
 }

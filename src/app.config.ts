@@ -2,6 +2,7 @@ import config from "@colyseus/tools";
 import { monitor } from "@colyseus/monitor";
 import { playground } from "@colyseus/playground";
 import { lobbyRoom } from "./rooms/lobbyRoom";
+import { patrolRoom } from "./rooms/patrolRoom";
 
 /**
  * Import your Room files
@@ -14,6 +15,7 @@ export default config({
          * Define your room handlers:
          */
         gameServer.define('lobby', lobbyRoom)
+        gameServer.define('patrol', patrolRoom)
 
     },
 
@@ -24,6 +26,13 @@ export default config({
          */
         app.get("/hello_world", (req, res) => {
             res.send("It's time to kick ass and chew bubblegum!");
+        });
+        app?.get('/heartbeat', (req, res) => {
+            if (res) {
+                res.status(200).json({ message: "Server is up" });
+            } else {
+                res.status(500).json({ message: "Server is down" });
+            }
         });
 
         /**
