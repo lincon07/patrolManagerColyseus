@@ -92,6 +92,12 @@ export class MyRoom extends Room<MyRoomState> {
         return;
       }
     
+      if (message.targetWebsiteID === client.userData.websiteID) {
+        console.warn("Cannot send friend request to self:", message);
+        client.send("error", { message: "Cannot send friend request to self" });
+        return;
+      }
+
       // Find the sender and receiver clients in the room state
       const sender = this.state.clients.find((c) => c.sessionId === client.sessionId);
       const receiver = this.state.clients.find((c) => c.websiteID === message.targetWebsiteID);
