@@ -1,10 +1,10 @@
 import { Room, Client } from "@colyseus/core";
-import { MyRoomState, ClientSchema, PatrolLogs, SubdivisionUsage, Subdivision, ClientStatus } from "./schema/MyRoomState";
+import { LobbyRoomState, ClientSchema, PatrolLogs, SubdivisionUsage, Subdivision, ClientStatus } from "./schema/lobbyRoomState";
 import { ArraySchema } from "@colyseus/schema";
 
-export class MyRoom extends Room<MyRoomState> {
+export class LobbyRoom extends Room<LobbyRoomState> {
   onCreate(options: any) {
-    this.setState(new MyRoomState());
+    this.setState(new LobbyRoomState());
 
     this.setPatchRate(1000); // Update clients every second for better sync
 
@@ -128,7 +128,6 @@ export class MyRoom extends Room<MyRoomState> {
       console.log(`Friend request sent from ${sender.websiteID} to ${receiver.websiteID}`);
     });
     
-
     this.onMessage("friend_request_response", (client, message) => {
       console.log(`Friend request response received from ${client.sessionId}:`, message);
 
@@ -145,9 +144,6 @@ export class MyRoom extends Room<MyRoomState> {
         console.warn(`Target client ${message.to} not found.`);
       }
     });
-
-
-
 
   }
 
@@ -200,8 +196,6 @@ export class MyRoom extends Room<MyRoomState> {
     this.broadcastUpdatedClients();
   }
 
-
-
   onLeave(client: Client, consented: boolean) {
     console.log(`Client ${client.sessionId} left.`);
 
@@ -248,21 +242,6 @@ export class MyRoom extends Room<MyRoomState> {
       to,
       message
     })
-  }
-
-  private broadcastFriendRequest(from: string, to: string) {
-    const sender = this.state.clients.find((client) => client.websiteID === from);
-    if (!sender) {
-      console.warn(`Sender with websiteID ${from} not found`);
-      return;
-    }
-
-    this.broadcast("friend_request", {
-      from: sender.websiteID,
-      to,
-      name: sender.name || "Unknown",
-      avatar: sender.avatar || "",
-    });
   }
 
 }

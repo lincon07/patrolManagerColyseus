@@ -44,6 +44,6 @@ export class ClientSchema extends Schema {
   @type(ClientStatus) status: ClientStatus = new ClientStatus();
 }
 
-export class MyRoomState extends Schema {
+export class LobbyRoomState extends Schema {
   @type([ClientSchema]) clients: ArraySchema<ClientSchema> = new ArraySchema<ClientSchema>();
 }
