@@ -88,7 +88,7 @@ export class MyRoom extends Room<MyRoomState> {
       const targetClient = this.state.clients.find((c) => c.websiteID === message.targetWebsiteID);
     
       if (targetClient) {
-        this.broadcastFriendRequest(client?.userData?.websiteID, targetClient.sessionId);
+        this.broadcastFriendRequest(client?.userData?.websiteID, message?.targetWebsiteID);
         console.log(`Friend request sent to ${targetClient.sessionId}`);
       } else {
         console.warn(`Target client ${message.targetWebsiteID} not found.`);
