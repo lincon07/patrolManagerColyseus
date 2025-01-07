@@ -83,52 +83,53 @@ export class lobbyRoom extends Room<LobbyRoomState> {
       this.broadcastDevAnnouncement(message.to, message.message);
   });
 
-    this.onMessage("friend_request", (client, message) => {
-      console.log(`Friend request received from ${client.sessionId}:`, message);
-    
-      // Validate the incoming message
-      if (!message.targetWebsiteID || !client.userData.websiteID) {
-        console.warn("Invalid friend request data:", message);
-        client.send("error", { message: "Invalid friend request data" });
-        return;
-      }
-    
-      if (message.targetWebsiteID === client.userData.websiteID) {
-        console.warn("Cannot send friend request to self:", message);
-        client.send("error", { message: "Cannot send friend request to self" });
-        return;
-      }
-
-      // Find the sender and receiver clients in the room state
-      const sender = this.state.clients.find((c) => c.sessionId === client.sessionId);
-      const receiver = this.state.clients.find((c) => c.websiteID === message.targetWebsiteID);
-    
-      if (!sender || !receiver) {
-        console.warn("Sender or receiver client not found:", message);
-        client.send("error", { message: "Sender or receiver client not found" });
-        return;
-      }
-    
-      // Check if the receiver allows friend requests
-      if (!receiver.allowFriendRequests) {
-        console.warn(`${receiver.name} does not allow friend requests.`);
-        client.send("error", { message: `${receiver.name} does not allow friend requests` });
-        return;
-      }
-    
-      // Send friend request to the receiver
-      const payload = {
-        from: sender.websiteID,
-        to: receiver.websiteID,
-        name: sender.name || "Unknown",
-        avatar: sender.avatar || "",
-      };
-    
-      receiver.sessionId && this.clients.find((c) => c.sessionId === receiver.sessionId)?.send("friend_request", payload);
-    
+  this.onMessage("friend_request", (client, message) => {
+    console.log(`Friend request received from ${client.sessionId}:`, message);
+  
+    if (!message.targetWebsiteID || !client.userData.websiteID) {
+      console.warn("Invalid friend request data:", message);
+      client.send("error", { message: "Invalid friend request data" });
+      return;
+    }
+  
+    if (message.targetWebsiteID === client.userData.websiteID) {
+      console.warn("Cannot send friend request to self:", message);
+      client.send("error", { message: "Cannot send friend request to self" });
+      return;
+    }
+  
+    const sender = this.state.clients.find((c) => c.sessionId === client.sessionId);
+    const receiver = this.state.clients.find((c) => c.websiteID === message.targetWebsiteID);
+  
+    if (!sender || !receiver) {
+      console.warn("Sender or receiver client not found:", message);
+      client.send("error", { message: "Sender or receiver client not found" });
+      return;
+    }
+  
+    if (!receiver.allowFriendRequests) {
+      console.warn(`${receiver.name} does not allow friend requests.`);
+      client.send("error", { message: `${receiver.name} does not allow friend requests` });
+      return;
+    }
+  
+    // Send friend request to receiver
+    const payload = {
+      from: sender.websiteID,
+      to: receiver.websiteID,
+      name: sender.name || "Unknown",
+      avatar: sender.avatar || "",
+    };
+  
+    if (receiver.sessionId) {
+      const targetClient = this.clients.find((c) => c.sessionId === receiver.sessionId);
+      targetClient?.send("friend_request", payload);
       console.log(`Friend request sent from ${sender.websiteID} to ${receiver.websiteID}`);
-    });
-    
+    } else {
+      console.error(`Target client ${receiver.websiteID} is not connected.`);
+    }
+  });
+  
     this.onMessage("friend_request_response", (client, message) => {
       console.log(`Friend request response received from ${client.sessionId}:`, message);
 
