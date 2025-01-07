@@ -55,8 +55,6 @@ export class lobbyRoom extends Room<LobbyRoomState> {
         // Log the updated patrol logs for debugging
         console.log(`Updated patrol logs for client ${client.sessionId}:`, clientState.patrolLogs);
 
-        // Broadcast updated clients to all
-        this.broadcastUpdatedClients();
       } else {
         console.warn(`Invalid patrol logs received from client ${client.sessionId}`);
       }
@@ -70,8 +68,6 @@ export class lobbyRoom extends Room<LobbyRoomState> {
         clientState.status.selectedServer = message.selectedServer || null;
 
         console.log(`Updated status for client ${client.sessionId}:`, clientState.status);
-
-        this.broadcastUpdatedClients();
       } else {
         console.warn(`Client ${client.sessionId} not found for status update.`);
       }
@@ -85,7 +81,6 @@ export class lobbyRoom extends Room<LobbyRoomState> {
       this.state.announcements.push(announcement);
       this.broadcastDevAnnouncement(message.to, message.message);
   });
-  
 
     this.onMessage("friend_request", (client, message) => {
       console.log(`Friend request received from ${client.sessionId}:`, message);
@@ -197,7 +192,6 @@ export class lobbyRoom extends Room<LobbyRoomState> {
     newClient.status = status;
 
     this.state.clients.push(newClient);
-    this.broadcastUpdatedClients();
   }
 
   onLeave(client: Client, consented: boolean) {
@@ -208,7 +202,6 @@ export class lobbyRoom extends Room<LobbyRoomState> {
     if (index !== -1) {
       console.log(`Removing client ${client.sessionId} from the client list.`);
       this.state.clients.splice(index, 1);
-      this.broadcastUpdatedClients();
     } else {
       console.warn(`Client ${client.sessionId} not found in the client list.`);
     }
@@ -218,28 +211,6 @@ export class lobbyRoom extends Room<LobbyRoomState> {
     console.log(`Room ${this.roomId} disposing...`);
   }
 
-  private broadcastUpdatedClients() {
-    this.broadcast("update_clients", {
-      clients: this.state.clients.map((client) => ({
-        name: client.name,
-        avatar: client.avatar,
-        websiteID: client.websiteID,
-        version: client.version,
-        allowFriendRequests: client.allowFriendRequests,
-        patrolLogs: client.patrolLogs.map((log) => ({
-          Department: log.Department,
-          Server: log.Server,
-          startDate: log.startDate,
-          endDate: log.endDate,
-          Duration: log.Duration,
-        })),
-        status: {
-          selectedDepartment: client.status.selectedDepartment || null,
-          selectedServer: client.status.selectedServer || null,
-        },
-      })),
-    });
-  }
 
   private broadcastDevAnnouncement(to: string, message: string) {
     console.log(`Broadcasting dev announcement: to=${to}, message=${message}`);
