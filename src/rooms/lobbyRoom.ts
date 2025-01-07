@@ -8,10 +8,6 @@ export class lobbyRoom extends Room<LobbyRoomState> {
 
     this.setPatchRate(1000); // Update clients every second for better sync
 
-    this.onMessage("type", (client, message) => {
-      console.log(`Message received from ${client.sessionId}:`, message);
-    });
-
     this.onMessage("update_logs", (client, message) => {
       const clientState = this.state.clients.find((c) => c.sessionId === client.sessionId);
 
@@ -47,7 +43,6 @@ export class lobbyRoom extends Room<LobbyRoomState> {
               patrolLog.SubdivisionUsage.push(subdivisionUsage);
             });
           }
-
           // Add the log to the client's patrol logs
           clientState.patrolLogs.push(patrolLog);
         });
@@ -68,9 +63,15 @@ export class lobbyRoom extends Room<LobbyRoomState> {
         clientState.status.selectedServer = message.selectedServer || null;
 
         console.log(`Updated status for client ${client.sessionId}:`, clientState.status);
-      } else {
-        console.warn(`Client ${client.sessionId} not found for status update.`);
+      } if (!clientState) {
+        console.warn(`Client ${client.sessionId} not found. Ignoring update_status.`);
+        return; // Avoid adding clients here unexpectedly
       }
+      else {
+        console.warn(`Invalid status update received from client ${client.sessionId}`);
+      }
+      
+
     });
 
     this.onMessage("dev_announcement", (client, message) => {
@@ -148,28 +149,24 @@ export class lobbyRoom extends Room<LobbyRoomState> {
   }
 
   onJoin(client: Client, options: any) {
-
-    // Attach websiteID to client.userData
-    client.userData = {
-      websiteID: options.websiteID || "0",
-    };
-
+    client.userData = { websiteID: options.websiteID || "0" , discordID: options.discordID || "0" };
+  
     const existingClient = this.state.clients.find((c) => c.websiteID === options.websiteID);
-
+  
     if (existingClient) {
       existingClient.sessionId = client.sessionId;
       return;
     }
-
+  
     const newClient = new ClientSchema();
     newClient.name = options.name || "Guest";
     newClient.websiteID = options.websiteID || "0";
+    newClient.discordID = options.discordID || "0";
     newClient.avatar = options.avatar || "";
     newClient.version = options.version || "";
-    newClient.allowFriendRequests = options.allowFriendRequests
+    newClient.allowFriendRequests = options.allowFriendRequests || false;
     newClient.sessionId = client.sessionId;
-
-    // Add patrolLogs
+  
     if (Array.isArray(options.patrolLogs)) {
       newClient.patrolLogs = new ArraySchema<PatrolLogs>();
       options.patrolLogs.forEach((log: any) => {
@@ -181,18 +178,14 @@ export class lobbyRoom extends Room<LobbyRoomState> {
         patrolLog.Duration = log.Duration || 0;
         patrolLog.Active = log.Active || false;
         patrolLog.Paused = log.Paused || false;
-
         newClient.patrolLogs.push(patrolLog);
       });
     }
-
-    const status = new ClientStatus();
-    status.selectedDepartment = options.status?.selectedDepartment || null;
-    status.selectedServer = options.status?.selectedServer || null;
-    newClient.status = status;
-
+  
     this.state.clients.push(newClient);
+    console.log(`Client joined: ${newClient.name}`);
   }
+  
 
   onLeave(client: Client, consented: boolean) {
     console.log(`Client ${client.sessionId} left.`);
@@ -210,8 +203,6 @@ export class lobbyRoom extends Room<LobbyRoomState> {
   onDispose() {
     console.log(`Room ${this.roomId} disposing...`);
   }
-
-
   private broadcastDevAnnouncement(to: string, message: string) {
     console.log(`Broadcasting dev announcement: to=${to}, message=${message}`);
     this.broadcast("dev_announcment", {
@@ -219,6 +210,5 @@ export class lobbyRoom extends Room<LobbyRoomState> {
         message,
     });
 }
-
 
 }

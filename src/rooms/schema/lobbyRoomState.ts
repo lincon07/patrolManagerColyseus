@@ -42,6 +42,7 @@ export class PatrolLogs extends Schema {
 export class ClientSchema extends Schema {
   @type("string") name: string = "";
   @type("string") websiteID: string = "";
+  @type("string") discordID: string = "";
   @type("string") version: string = "";
   @type('boolean') allowFriendRequests: boolean = true;
   @type("string") avatar: string = "";
@@ -52,6 +53,5 @@ export class ClientSchema extends Schema {
 
 export class LobbyRoomState extends Schema {
   @type([ClientSchema]) clients: ArraySchema<ClientSchema> = new ArraySchema<ClientSchema>();
-  // array of announcements
   @type([developemtAnnouncement]) announcements: ArraySchema<developemtAnnouncement> = new ArraySchema<developemtAnnouncement>();
 }

@@ -34,7 +34,6 @@ export class patrolRoom extends Room<PatrolRoomSchema> {
         });
     }
 
-
     onJoin(client: any, options: any) {
         // Validate client options
         if (!options?.name || !options?.websiteID) {
@@ -43,8 +42,7 @@ export class patrolRoom extends Room<PatrolRoomSchema> {
         }
 
         // Check if client already exists
-        const clientExists = this.state.clients.some(
-            (c) => c.websiteID === options.websiteID
+        const clientExists = this.state.clients.some((c) => c.websiteID === options.websiteID
         );
 
         if (clientExists) {
@@ -92,8 +90,8 @@ export class patrolRoom extends Room<PatrolRoomSchema> {
             }
         }
 
-        // Broadcast updated clients list
-        this.broadcast("clients", this.state.clients);
+        // change state 
+        this.broadcastPatch()
     }
 
     onDispose() {
